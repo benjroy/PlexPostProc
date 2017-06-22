@@ -43,10 +43,17 @@ if [ ! -z "$1" ]; then
 
    TEMPFILENAME="$(mktemp)"  # Temporary File for transcoding
 
+   LOCKFILENAME="/tmp/PlexPostProcLock"
+
    # Uncomment if you want to adjust the bandwidth for this thread
    #MYPID=$$	# Process ID for current script
    # Adjust niceness of CPU priority for the current process
    #renice 19 $MYPID
+
+   # Ensures no more than 1 convert process running at a time.
+   # Keeps CPU happy.
+   while [ -f "$LOCKFILENAME" ]; do sleep 10; done;
+   touch "$LOCKFILENAME"
 
    echo "********************************************************"
    echo "Transcoding, Converting to H.264 w/Handbrake"
@@ -60,6 +67,9 @@ if [ ! -z "$1" ]; then
    rm -f "$FILENAME"
    mv -f "$TEMPFILENAME" "$FILENAME"
    chmod 777 "$FILENAME" # This step may no tbe neccessary, but hey why not.
+
+   # Let next conversion run.
+   rm -f "$LOCKFILENAME"
 
    echo "Done.  Congrats!"
 else
